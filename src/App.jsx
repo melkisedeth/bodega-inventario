@@ -25,7 +25,8 @@ const theme = createTheme({
 function App() {
   return (
     <ThemeProvider theme={theme}>
-      <Router>
+      {/* Add basename prop here */}
+      <Router basename="/bodega-inventario">
         <AuthProvider>
           <Routes>
             <Route path="/login" element={<Login />} />
@@ -36,6 +37,8 @@ function App() {
             <Route path="/adjustments" element={<PrivateRoute><Adjustments /></PrivateRoute>} />
             <Route path="/reports" element={<PrivateRoute><Reports /></PrivateRoute>} />
             {/* <Route path="/settings" element={<PrivateRoute><Settings /></PrivateRoute>} /> */}
+            {/* Add a catch-all redirect for GitHub Pages */}
+            <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </AuthProvider>
       </Router>
