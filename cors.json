@@ -1,0 +1,7 @@
+[
+  {
+    "origin": ["https://melkisedeth.github.io", "http://localhost:*"],
+    "method": ["GET"],
+    "maxAgeSeconds": 3600
+  }
+]
