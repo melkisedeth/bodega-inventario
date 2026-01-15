@@ -6,7 +6,7 @@ export default defineConfig({
   server: {
     port: 3000,
   },
-  base: '/bodega-inventario/',
+  base: '/bodega-inventario/', // Esto está correcto
   build: {
     outDir: 'dist',
     sourcemap: true,
