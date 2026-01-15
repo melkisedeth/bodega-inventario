@@ -15,9 +15,9 @@ import {
   FormControl,
   FormHelperText,
   MenuItem,
-  Grid,
   Chip,
-  CircularProgress
+  CircularProgress,
+  Stack
 } from '@mui/material';
 import {
   Close as CloseIcon,
@@ -28,7 +28,9 @@ import {
   Inventory as InventoryIcon,
   Warning as WarningIcon,
   LocalOffer as LocalOfferIcon,
-  Search as SearchIcon
+  Search as SearchIcon,
+  TrendingDown as TrendingDownIcon,
+  TrendingUp as TrendingUpIcon
 } from '@mui/icons-material';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
@@ -282,12 +284,12 @@ const ProductForm = ({ open, onClose, onSubmit, product }) => {
     <Dialog 
       open={open} 
       onClose={onClose} 
-      maxWidth="md" 
+      maxWidth="sm" 
       fullWidth
       PaperProps={{
         sx: {
           borderRadius: 2,
-          maxHeight: '90vh',
+          maxHeight: '95vh',
           display: 'flex',
           flexDirection: 'column'
         }
@@ -299,19 +301,23 @@ const ProductForm = ({ open, onClose, onSubmit, product }) => {
         display: 'flex',
         justifyContent: 'space-between',
         alignItems: 'center',
-        py: 2,
+        py: 2.5,
+        px: 3,
         flexShrink: 0
       }}>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <InventoryIcon />
-          <Typography variant="h6" component="div">
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+          <InventoryIcon fontSize="medium" />
+          <Typography variant="h6" component="div" fontWeight={600}>
             {product ? 'Editar Producto' : 'Nuevo Producto'}
           </Typography>
         </Box>
         <IconButton 
           onClick={onClose}
-          sx={{ color: 'white' }}
-          size="small"
+          sx={{ 
+            color: 'white',
+            '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+          }}
+          size="medium"
         >
           <CloseIcon />
         </IconButton>
@@ -320,207 +326,237 @@ const ProductForm = ({ open, onClose, onSubmit, product }) => {
       <form onSubmit={handleSubmit(handleFormSubmit)} style={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
         <DialogContent sx={{ 
           py: 3, 
+          px: 3,
           overflowY: 'auto',
           flex: 1
         }}>
-          {/* Alertas de error */}
-          {errorAlert.open && (
-            <Alert 
-              severity={errorAlert.severity} 
-              sx={{ mb: 3, borderRadius: 1 }}
-              onClose={() => setErrorAlert({ ...errorAlert, open: false })}
-            >
-              {errorAlert.message}
-            </Alert>
-          )}
+          <Stack spacing={3}>
+            {/* Alertas de error */}
+            {errorAlert.open && (
+              <Alert 
+                severity={errorAlert.severity} 
+                sx={{ 
+                  borderRadius: 1.5,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+                }}
+                onClose={() => setErrorAlert({ ...errorAlert, open: false })}
+              >
+                {errorAlert.message}
+              </Alert>
+            )}
 
-          {/* SECCIÓN DE BÚSQUEDA EN EXCEL */}
-          {!product && (
-            <Box sx={{ 
-              mb: 3, 
-              p: 2, 
-              bgcolor: 'info.lighter', 
-              borderRadius: 1, 
-              border: '1px solid', 
-              borderColor: 'info.light',
-              position: 'relative'
-            }}>
-              <Typography variant="subtitle1" gutterBottom color="info.dark" fontWeight="bold">
-                <SearchIcon sx={{ mr: 1, verticalAlign: 'middle' }} />
-                Buscar en inventario existente
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Busca productos previamente registrados en el archivo Excel
-              </Typography>
-              
-              <ProductSearch 
-                onSelectProduct={handleExcelProductSelect}
-                disabled={!!selectedExcelProduct || isSubmitting || isFromExcel}
-              />
-              
-              {selectedExcelProduct && (
-                <Box sx={{ 
-                  mt: 2, 
-                  p: 1.5, 
-                  bgcolor: 'success.lighter', 
-                  borderRadius: 1, 
-                  border: '1px solid', 
-                  borderColor: 'success.light'
-                }}>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <Box>
-                      <Typography variant="subtitle2" color="success.dark" fontWeight="bold">
-                        ✅ Producto seleccionado del inventario:
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong>Código:</strong> {selectedExcelProduct.code}
-                      </Typography>
-                      <Typography variant="body2">
-                        <strong>Descripción:</strong> {selectedExcelProduct.description}
-                      </Typography>
-                    </Box>
-                    <Button 
-                      size="small" 
-                      variant="outlined" 
-                      color="error"
-                      onClick={handleClearExcelSelection}
-                      disabled={isSubmitting}
-                    >
-                      Cambiar
-                    </Button>
-                  </Box>
-                </Box>
-              )}
-            </Box>
-          )}
-
-          {/* Alertas de inventario */}
-          {(hasLowStock || hasExcessStock) && (
-            <Alert 
-              severity={hasLowStock ? "warning" : "info"} 
-              sx={{ mb: 3, borderRadius: 1 }}
-              icon={hasLowStock ? <WarningIcon /> : null}
-            >
-              {hasLowStock 
-                ? `Stock bajo: ${currentQuantity || 0} ${unit} (Mínimo: ${minQuantity} ${unit})`
-                : `Stock excedido: ${currentQuantity || 0} ${unit} (Máximo: ${maxQuantity} ${unit})`
-              }
-            </Alert>
-          )}
-
-          {/* Grid para organizar los campos */}
-          <Grid container spacing={3}>
-            {/* Código del Producto */}
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-                  <Typography variant="subtitle2" color="text.secondary">
-                    Código del Producto *
-                  </Typography>
-                  {selectedExcelProduct && (
-                    <Chip 
-                      label="Del inventario" 
-                      size="small" 
-                      color="success" 
-                      variant="outlined"
-                    />
-                  )}
-                </Box>
-                <Controller
-                  name="code"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      placeholder="Ej: PROD-001"
-                      error={!!errors.code}
-                      disabled={!!product || selectedExcelProduct || validatingCode}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <LocalOfferIcon color={selectedExcelProduct ? "success" : "action"} />
-                          </InputAdornment>
-                        ),
-                        endAdornment: validatingCode && (
-                          <InputAdornment position="end">
-                            <CircularProgress size={20} />
-                          </InputAdornment>
-                        )
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                        }
-                      }}
-                      onBlur={async () => {
-                        if (field.value && !selectedExcelProduct && !product) {
-                          setValidatingCode(true);
-                          await trigger('code');
-                          setValidatingCode(false);
-                        }
-                      }}
-                    />
-                  )}
+            {/* SECCIÓN DE BÚSQUEDA EN EXCEL */}
+            {!product && (
+              <Box sx={{ 
+                p: 2.5, 
+                bgcolor: 'info.lighter', 
+                borderRadius: 1.5, 
+                border: '1px solid', 
+                borderColor: 'info.light',
+                boxShadow: '0 1px 4px rgba(0,0,0,0.05)'
+              }}>
+                <Typography variant="subtitle1" gutterBottom color="info.dark" fontWeight={600}>
+                  <SearchIcon sx={{ mr: 1, verticalAlign: 'middle', fontSize: 20 }} />
+                  Buscar en inventario existente
+                </Typography>
+                <Typography variant="body2" color="text.secondary" sx={{ mb: 2, lineHeight: 1.5 }}>
+                  Busca productos previamente registrados en el archivo Excel
+                </Typography>
+                
+                <ProductSearch 
+                  onSelectProduct={handleExcelProductSelect}
+                  disabled={!!selectedExcelProduct || isSubmitting || isFromExcel}
                 />
-                {errors.code && (
-                  <FormHelperText error>
+                
+                {selectedExcelProduct && (
+                  <Box sx={{ 
+                    mt: 2.5, 
+                    p: 2, 
+                    bgcolor: 'success.lighter', 
+                    borderRadius: 1, 
+                    border: '1px solid', 
+                    borderColor: 'success.light'
+                  }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <Box sx={{ flex: 1 }}>
+                        <Typography variant="subtitle2" color="success.dark" fontWeight={600} sx={{ mb: 0.5 }}>
+                          ✅ Producto seleccionado del inventario:
+                        </Typography>
+                        <Typography variant="body2" sx={{ mb: 0.5 }}>
+                          <strong>Código:</strong> {selectedExcelProduct.code}
+                        </Typography>
+                        <Typography variant="body2">
+                          <strong>Descripción:</strong> {selectedExcelProduct.description}
+                        </Typography>
+                      </Box>
+                      <Button 
+                        size="small" 
+                        variant="outlined" 
+                        color="error"
+                        onClick={handleClearExcelSelection}
+                        disabled={isSubmitting}
+                        sx={{ ml: 1, minWidth: 90 }}
+                      >
+                        Cambiar
+                      </Button>
+                    </Box>
+                  </Box>
+                )}
+              </Box>
+            )}
+
+            {/* Alertas de inventario */}
+            {(hasLowStock || hasExcessStock) && (
+              <Alert 
+                severity={hasLowStock ? "warning" : "info"} 
+                sx={{ 
+                  borderRadius: 1.5,
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                  '& .MuiAlert-icon': { fontSize: 22 }
+                }}
+                icon={hasLowStock ? <WarningIcon /> : null}
+              >
+                <Typography fontWeight={600} sx={{ mb: 0.5 }}>
+                  {hasLowStock ? '⚠️ Stock bajo' : '📊 Stock excedido'}
+                </Typography>
+                <Typography variant="body2">
+                  {hasLowStock 
+                    ? `${currentQuantity || 0} ${unit} (Mínimo: ${minQuantity} ${unit})`
+                    : `${currentQuantity || 0} ${unit} (Máximo: ${maxQuantity} ${unit})`
+                  }
+                </Typography>
+              </Alert>
+            )}
+
+            {/* Código del Producto */}
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                <LocalOfferIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
+                Código del Producto *
+              </Typography>
+              <Controller
+                name="code"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    placeholder="Ej: PROD-001"
+                    error={!!errors.code}
+                    disabled={!!product || selectedExcelProduct || validatingCode}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <LocalOfferIcon color={selectedExcelProduct ? "success" : "action"} />
+                        </InputAdornment>
+                      ),
+                      endAdornment: validatingCode && (
+                        <InputAdornment position="end">
+                          <CircularProgress size={20} />
+                        </InputAdornment>
+                      )
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        height: 56
+                      },
+                      '& .MuiInputBase-input': {
+                        fontSize: '1rem'
+                      }
+                    }}
+                    onBlur={async () => {
+                      if (field.value && !selectedExcelProduct && !product) {
+                        setValidatingCode(true);
+                        await trigger('code');
+                        setValidatingCode(false);
+                      }
+                    }}
+                  />
+                )}
+              />
+              <Box sx={{ mt: 0.5, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {errors.code ? (
+                  <FormHelperText error sx={{ m: 0 }}>
                     {errors.code.type === 'unique-code' 
-                      ? 'Este código ya existe en el sistema'
-                      : errors.code.message}
+                      ? '❌ Este código ya existe en el sistema'
+                      : `❌ ${errors.code.message}`}
+                  </FormHelperText>
+                ) : (
+                  <FormHelperText sx={{ m: 0 }}>
+                    {selectedExcelProduct ? (
+                      <span style={{ color: '#2e7d32', display: 'flex', alignItems: 'center' }}>
+                        <span style={{ fontSize: '1.2em', marginRight: 4 }}>✓</span> Código verificado en el inventario
+                      </span>
+                    ) : (
+                      'Ingresa un código único para el producto'
+                    )}
                   </FormHelperText>
                 )}
-                {!errors.code && selectedExcelProduct && (
-                  <FormHelperText sx={{ color: 'success.main' }}>
-                    ✓ Código verificado en el inventario
-                  </FormHelperText>
+                {selectedExcelProduct && (
+                  <Chip 
+                    label="Del inventario" 
+                    size="small" 
+                    color="success" 
+                    variant="outlined"
+                    sx={{ height: 24, fontSize: '0.75rem' }}
+                  />
                 )}
-              </FormControl>
-            </Grid>
+              </Box>
+            </Box>
 
             {/* Descripción */}
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <Typography variant="subtitle2" gutterBottom color="text.secondary">
-                  Descripción del Producto *
-                </Typography>
-                <Controller
-                  name="description"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      placeholder="Ej: Martillo de carpintero profesional"
-                      multiline
-                      rows={3}
-                      error={!!errors.description}
-                      disabled={!!selectedExcelProduct}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <DescriptionIcon color={selectedExcelProduct ? "success" : "action"} />
-                          </InputAdornment>
-                        ),
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                        }
-                      }}
-                    />
-                  )}
-                />
-                {errors.description && (
-                  <FormHelperText error>{errors.description.message}</FormHelperText>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                <DescriptionIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
+                Descripción del Producto *
+              </Typography>
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    placeholder="Ej: Martillo de carpintero profesional con mango de fibra de vidrio..."
+                    multiline
+                    rows={4}
+                    error={!!errors.description}
+                    disabled={!!selectedExcelProduct}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <DescriptionIcon color={selectedExcelProduct ? "success" : "action"} />
+                        </InputAdornment>
+                      ),
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        alignItems: 'flex-start',
+                        pt: 1
+                      },
+                      '& .MuiInputBase-input': {
+                        fontSize: '1rem',
+                        lineHeight: 1.5
+                      }
+                    }}
+                  />
                 )}
-              </FormControl>
-            </Grid>
+              />
+              {errors.description && (
+                <FormHelperText error sx={{ mt: 0.5 }}>
+                  ❌ {errors.description.message}
+                </FormHelperText>
+              )}
+            </Box>
 
-            {/* Fila para Unidad y Departamento */}
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <Typography variant="subtitle2" gutterBottom color="text.secondary">
+            {/* Unidad y Departamento en columna */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {/* Unidad de Medida */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                  <StraightenIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
                   Unidad de Medida *
                 </Typography>
                 <Controller
@@ -541,12 +577,16 @@ const ProductForm = ({ open, onClose, onSubmit, product }) => {
                       }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
+                          borderRadius: 1.5,
+                          height: 56
+                        },
+                        '& .MuiInputBase-input': {
+                          fontSize: '1rem'
                         }
                       }}
                     >
                       {unitOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
+                        <MenuItem key={option.value} value={option.value} sx={{ py: 1.5 }}>
                           {option.label}
                         </MenuItem>
                       ))}
@@ -554,14 +594,16 @@ const ProductForm = ({ open, onClose, onSubmit, product }) => {
                   )}
                 />
                 {errors.unit && (
-                  <FormHelperText error>{errors.unit.message}</FormHelperText>
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    ❌ {errors.unit.message}
+                  </FormHelperText>
                 )}
-              </FormControl>
-            </Grid>
+              </Box>
 
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <Typography variant="subtitle2" gutterBottom color="text.secondary">
+              {/* Departamento/Categoría */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                  <CategoryIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
                   Departamento/Categoría *
                 </Typography>
                 <Controller
@@ -582,12 +624,16 @@ const ProductForm = ({ open, onClose, onSubmit, product }) => {
                       }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
+                          borderRadius: 1.5,
+                          height: 56
+                        },
+                        '& .MuiInputBase-input': {
+                          fontSize: '1rem'
                         }
                       }}
                     >
                       {departmentOptions.map((option) => (
-                        <MenuItem key={option.value} value={option.value}>
+                        <MenuItem key={option.value} value={option.value} sx={{ py: 1.5 }}>
                           {option.label}
                         </MenuItem>
                       ))}
@@ -595,69 +641,77 @@ const ProductForm = ({ open, onClose, onSubmit, product }) => {
                   )}
                 />
                 {errors.department && (
-                  <FormHelperText error>{errors.department.message}</FormHelperText>
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    ❌ {errors.department.message}
+                  </FormHelperText>
                 )}
-              </FormControl>
-            </Grid>
+              </Box>
+            </Box>
 
             {/* Cantidad en Stock */}
-            <Grid item xs={12}>
-              <FormControl fullWidth>
-                <Typography variant="subtitle2" gutterBottom color="text.secondary">
-                  Cantidad en Stock *
-                </Typography>
-                <Controller
-                  name="currentQuantity"
-                  control={control}
-                  render={({ field }) => (
-                    <TextField
-                      {...field}
-                      fullWidth
-                      type="number"
-                      placeholder="0"
-                      value={field.value || 0}
-                      onChange={(e) => {
-                        const value = e.target.value;
-                        handleQuantityChange('currentQuantity', value);
-                      }}
-                      error={!!errors.currentQuantity}
-                      InputProps={{
-                        startAdornment: (
-                          <InputAdornment position="start">
-                            <NumbersIcon color="action" />
-                          </InputAdornment>
-                        ),
-                        inputProps: { 
-                          min: 0,
-                          step: 0.01
-                        }
-                      }}
-                      sx={{
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
-                        }
-                      }}
-                    />
-                  )}
-                />
-                {errors.currentQuantity && (
-                  <FormHelperText error>{errors.currentQuantity.message}</FormHelperText>
+            <Box>
+              <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                <NumbersIcon sx={{ mr: 1, fontSize: 20, color: 'primary.main' }} />
+                Cantidad en Stock *
+              </Typography>
+              <Controller
+                name="currentQuantity"
+                control={control}
+                render={({ field }) => (
+                  <TextField
+                    {...field}
+                    fullWidth
+                    type="number"
+                    placeholder="0"
+                    value={field.value || 0}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      handleQuantityChange('currentQuantity', value);
+                    }}
+                    error={!!errors.currentQuantity}
+                    InputProps={{
+                      startAdornment: (
+                        <InputAdornment position="start">
+                          <NumbersIcon color="action" />
+                        </InputAdornment>
+                      ),
+                      inputProps: { 
+                        min: 0,
+                        step: 0.01
+                      }
+                    }}
+                    sx={{
+                      '& .MuiOutlinedInput-root': {
+                        borderRadius: 1.5,
+                        height: 56
+                      },
+                      '& .MuiInputBase-input': {
+                        fontSize: '1.1rem',
+                        fontWeight: 500
+                      }
+                    }}
+                  />
                 )}
-              </FormControl>
-            </Grid>
-          </Grid>
+              />
+              {errors.currentQuantity && (
+                <FormHelperText error sx={{ mt: 0.5 }}>
+                  ❌ {errors.currentQuantity.message}
+                </FormHelperText>
+              )}
+            </Box>
 
-          <Divider sx={{ my: 3 }}>
-            <Typography variant="body2" color="text.secondary">
-              Configuración de Stock (Opcional)
-            </Typography>
-          </Divider>
+            <Divider sx={{ my: 1 }}>
+              <Typography variant="subtitle2" color="text.secondary" fontWeight={600}>
+                Configuración de Stock (Opcional)
+              </Typography>
+            </Divider>
 
-          {/* Fila para Stock Mínimo y Máximo */}
-          <Grid container spacing={2}>
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <Typography variant="subtitle2" gutterBottom color="text.secondary">
+            {/* Stock Mínimo y Máximo */}
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              {/* Stock Mínimo */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                  <TrendingDownIcon sx={{ mr: 1, fontSize: 20, color: 'warning.main' }} />
                   Stock Mínimo
                 </Typography>
                 <Controller
@@ -686,25 +740,31 @@ const ProductForm = ({ open, onClose, onSubmit, product }) => {
                       }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
+                          borderRadius: 1.5,
+                          height: 56
+                        },
+                        '& .MuiInputBase-input': {
+                          fontSize: '1rem'
                         }
                       }}
                     />
                   )}
                 />
                 {errors.minQuantity ? (
-                  <FormHelperText error>{errors.minQuantity.message}</FormHelperText>
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    ❌ {errors.minQuantity.message}
+                  </FormHelperText>
                 ) : (
-                  <FormHelperText>
-                    Alerta cuando el stock sea igual o menor
+                  <FormHelperText sx={{ mt: 0.5 }}>
+                    Recibirás alertas cuando el stock sea igual o menor a este valor
                   </FormHelperText>
                 )}
-              </FormControl>
-            </Grid>
+              </Box>
 
-            <Grid item xs={12} sm={6}>
-              <FormControl fullWidth>
-                <Typography variant="subtitle2" gutterBottom color="text.secondary">
+              {/* Stock Máximo */}
+              <Box>
+                <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 1, display: 'flex', alignItems: 'center' }}>
+                  <TrendingUpIcon sx={{ mr: 1, fontSize: 20, color: 'info.main' }} />
                   Stock Máximo
                 </Typography>
                 <Controller
@@ -733,90 +793,97 @@ const ProductForm = ({ open, onClose, onSubmit, product }) => {
                       }}
                       sx={{
                         '& .MuiOutlinedInput-root': {
-                          borderRadius: 1,
+                          borderRadius: 1.5,
+                          height: 56
+                        },
+                        '& .MuiInputBase-input': {
+                          fontSize: '1rem'
                         }
                       }}
                     />
                   )}
                 />
                 {errors.maxQuantity ? (
-                  <FormHelperText error>{errors.maxQuantity.message}</FormHelperText>
+                  <FormHelperText error sx={{ mt: 0.5 }}>
+                    ❌ {errors.maxQuantity.message}
+                  </FormHelperText>
                 ) : (
-                  <FormHelperText>
-                    Alerta cuando el stock sea mayor
+                  <FormHelperText sx={{ mt: 0.5 }}>
+                    Recibirás alertas cuando el stock exceda este valor
                   </FormHelperText>
                 )}
-              </FormControl>
-            </Grid>
-          </Grid>
-
-          {/* Resumen de Stock - SOLO si hay configuraciones */}
-          {(minQuantity || maxQuantity) && (
-            <Box sx={{ 
-              mt: 3,
-              p: 2, 
-              bgcolor: 'grey.50', 
-              borderRadius: 1,
-              border: '1px solid',
-              borderColor: 'grey.200',
-              mb: 2
-            }}>
-              <Typography variant="subtitle2" gutterBottom color="text.secondary">
-                Resumen de Configuración:
-              </Typography>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Stock actual:
-                  </Typography>
-                  <Typography variant="body2" fontWeight="medium">
-                    {currentQuantity || 0} {unit}
-                  </Typography>
-                </Box>
-                {minQuantity && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Stock mínimo:
-                    </Typography>
-                    <Typography variant="body2" fontWeight="medium">
-                      {minQuantity} {unit}
-                    </Typography>
-                  </Box>
-                )}
-                {maxQuantity && (
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <Typography variant="body2" color="text.secondary">
-                      Stock máximo:
-                    </Typography>
-                    <Typography variant="body2" fontWeight="medium">
-                      {maxQuantity} {unit}
-                    </Typography>
-                  </Box>
-                )}
-                <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Margen de seguridad:
-                  </Typography>
-                  <Typography 
-                    variant="body2" 
-                    fontWeight="medium"
-                    color={(currentQuantity || 0) - (minQuantity || 0) <= 0 ? 'error.main' : 'success.main'}
-                  >
-                    {(currentQuantity || 0) - (minQuantity || 0)} {unit}
-                  </Typography>
-                </Box>
               </Box>
             </Box>
-          )}
+
+            {/* Resumen de Stock - SOLO si hay configuraciones */}
+            {(minQuantity || maxQuantity) && (
+              <Box sx={{ 
+                mt: 1,
+                p: 2.5, 
+                bgcolor: 'grey.50', 
+                borderRadius: 1.5,
+                border: '1px solid',
+                borderColor: 'grey.300',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.05)'
+              }}>
+                <Typography variant="subtitle1" fontWeight={600} gutterBottom color="text.primary">
+                  📊 Resumen de Configuración
+                </Typography>
+                <Stack spacing={1.5}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Stock actual:
+                    </Typography>
+                    <Typography variant="body1" fontWeight={600}>
+                      {currentQuantity || 0} {unit}
+                    </Typography>
+                  </Box>
+                  {minQuantity && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Stock mínimo:
+                      </Typography>
+                      <Typography variant="body1" fontWeight={600} color="warning.main">
+                        {minQuantity} {unit}
+                      </Typography>
+                    </Box>
+                  )}
+                  {maxQuantity && (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                      <Typography variant="body2" color="text.secondary">
+                        Stock máximo:
+                      </Typography>
+                      <Typography variant="body1" fontWeight={600} color="info.main">
+                        {maxQuantity} {unit}
+                      </Typography>
+                    </Box>
+                  )}
+                  <Divider sx={{ my: 0.5 }} />
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <Typography variant="body2" color="text.secondary">
+                      Margen de seguridad:
+                    </Typography>
+                    <Typography 
+                      variant="body1" 
+                      fontWeight={600}
+                      color={(currentQuantity || 0) - (minQuantity || 0) <= 0 ? 'error.main' : 'success.main'}
+                    >
+                      {(currentQuantity || 0) - (minQuantity || 0)} {unit}
+                    </Typography>
+                  </Box>
+                </Stack>
+              </Box>
+            )}
+          </Stack>
         </DialogContent>
 
         {/* Botones SIEMPRE VISIBLES */}
         <DialogActions sx={{ 
           px: 3, 
-          py: 2, 
+          py: 2.5, 
           bgcolor: 'grey.50',
           borderTop: '1px solid',
-          borderColor: 'grey.200',
+          borderColor: 'grey.300',
           flexShrink: 0,
           position: 'sticky',
           bottom: 0,
@@ -827,8 +894,10 @@ const ProductForm = ({ open, onClose, onSubmit, product }) => {
             variant="outlined"
             color="inherit"
             sx={{ 
-              borderRadius: 1,
-              minWidth: 100
+              borderRadius: 1.5,
+              minWidth: 100,
+              height: 42,
+              fontSize: '0.95rem'
             }}
           >
             Cancelar
@@ -838,21 +907,31 @@ const ProductForm = ({ open, onClose, onSubmit, product }) => {
             variant="contained"
             disabled={isSubmitting || (!isDirty && product)}
             sx={{ 
-              borderRadius: 1,
+              borderRadius: 1.5,
               minWidth: 150,
+              height: 42,
+              fontSize: '0.95rem',
+              fontWeight: 600,
               bgcolor: 'primary.main',
               '&:hover': {
-                bgcolor: 'primary.dark'
+                bgcolor: 'primary.dark',
+                transform: 'translateY(-1px)',
+                boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
               },
               '&:disabled': {
-                bgcolor: 'grey.400'
-              }
+                bgcolor: 'grey.400',
+                transform: 'none',
+                boxShadow: 'none'
+              },
+              transition: 'all 0.2s ease'
             }}
           >
-            {isSubmitting 
-              ? 'Guardando...' 
-              : product ? 'Guardar Cambios' : 'Crear Producto'
-            }
+            {isSubmitting ? (
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <CircularProgress size={16} color="inherit" />
+                Guardando...
+              </Box>
+            ) : product ? 'Guardar Cambios' : 'Crear Producto'}
           </Button>
         </DialogActions>
       </form>
