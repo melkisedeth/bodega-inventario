@@ -60,7 +60,7 @@ const Alerts = () => {
         productsService.getAlmostOutOfStockProducts(),
         productsService.getExcessStockProducts()
       ]);
-      
+
       setLowStockProducts(lowStock);
       setAlmostOutProducts(almostOut);
       setExcessStockProducts(excessStock);
@@ -71,15 +71,7 @@ const Alerts = () => {
     }
   };
 
-  const getAlertLevel = (product) => {
-    if (!product.minQuantity) return 'info';
-    
-    const percentage = (product.currentQuantity / product.minQuantity) * 100;
-    
-    if (percentage <= 50) return 'error';
-    if (percentage <= 100) return 'warning';
-    return 'info';
-  };
+
 
   const getAlertIcon = (level) => {
     switch (level) {
@@ -92,63 +84,73 @@ const Alerts = () => {
     }
   };
 
+  // En el array de columnas, modifica el valueGetter de la columna percentage:
   const lowStockColumns = [
     { field: 'code', headerName: 'Código', width: 150 },
     { field: 'description', headerName: 'Descripción', width: 250 },
     { field: 'department', headerName: 'Departamento', width: 150 },
-    { 
-      field: 'currentQuantity', 
-      headerName: 'Cantidad Actual', 
+    {
+      field: 'currentQuantity',
+      headerName: 'Cantidad Actual',
       width: 150,
       renderCell: (params) => (
-        <Chip 
-          label={`${params.value} ${params.row.unit}`} 
-          color="error" 
-          size="small" 
+        <Chip
+          label={`${params.value} ${params.row.unit || ''}`}
+          color="error"
+          size="small"
         />
       )
     },
-    { 
-      field: 'minQuantity', 
-      headerName: 'Cantidad Mínima', 
+    {
+      field: 'minQuantity',
+      headerName: 'Cantidad Mínima',
       width: 150,
       renderCell: (params) => (
-        <Chip 
-          label={params.value} 
+        <Chip
+          label={params.value || 'N/A'}
           variant="outlined"
-          size="small" 
+          size="small"
         />
       )
     },
-    { 
-      field: 'percentage', 
-      headerName: 'Nivel', 
+    {
+      field: 'percentage',
+      headerName: 'Nivel',
       width: 120,
       valueGetter: (params) => {
-        if (!params.row.minQuantity) return 'N/A';
+        // Añade validación para evitar el error
+        if (!params?.row?.minQuantity || !params?.row?.currentQuantity) return 'N/A';
         return `${Math.round((params.row.currentQuantity / params.row.minQuantity) * 100)}%`;
       },
       renderCell: (params) => {
-        const percentage = params.row.minQuantity ? 
-          (params.row.currentQuantity / params.row.minQuantity) * 100 : 0;
-        
+        // Añade validación aquí también
+        if (!params.row?.minQuantity || !params.row?.currentQuantity) {
+          return (
+            <Typography variant="body2" color="textSecondary">
+              N/A
+            </Typography>
+          );
+        }
+
+        const percentage = (params.row.currentQuantity / params.row.minQuantity) * 100;
+
         let color = 'success';
         if (percentage <= 50) color = 'error';
         else if (percentage <= 100) color = 'warning';
-        
+
         return (
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            <LinearProgress 
-              variant="determinate" 
-              value={Math.min(percentage, 100)} 
-              sx={{ 
-                width: 60, 
+            <LinearProgress
+              variant="determinate"
+              value={Math.min(percentage, 100)}
+              sx={{
+                width: 60,
                 mr: 1,
                 '& .MuiLinearProgress-bar': {
-                  backgroundColor: color === 'error' ? '#f44336' : 
-                                 color === 'warning' ? '#ff9800' : '#4caf50'
+                  backgroundColor: color === 'error' ? '#f44336' :
+                    color === 'warning' ? '#ff9800' : '#4caf50'
                 }
-              }} 
+              }}
             />
             <Typography variant="body2" color="textSecondary">
               {params.value}
@@ -158,6 +160,16 @@ const Alerts = () => {
       }
     }
   ];
+
+  const getAlertLevel = (product) => {
+    if (!product?.minQuantity || !product?.currentQuantity) return 'info';
+
+    const percentage = (product.currentQuantity / product.minQuantity) * 100;
+
+    if (percentage <= 50) return 'error';
+    if (percentage <= 100) return 'warning';
+    return 'info';
+  };
 
   const handleOpenSettings = () => {
     setOpenSettings(true);
@@ -221,10 +233,10 @@ const Alerts = () => {
                   </Box>
                 }
                 action={
-                  <Chip 
-                    label="Crítico" 
-                    color="error" 
-                    size="small" 
+                  <Chip
+                    label="Crítico"
+                    color="error"
+                    size="small"
                     icon={<ErrorIcon />}
                   />
                 }
@@ -255,10 +267,10 @@ const Alerts = () => {
                   </Box>
                 }
                 action={
-                  <Chip 
-                    label="Advertencia" 
-                    color="warning" 
-                    size="small" 
+                  <Chip
+                    label="Advertencia"
+                    color="warning"
+                    size="small"
                     icon={<WarningIcon />}
                   />
                 }
@@ -308,10 +320,10 @@ const Alerts = () => {
                   </Box>
                 }
                 action={
-                  <Chip 
-                    label="Información" 
-                    color="info" 
-                    size="small" 
+                  <Chip
+                    label="Información"
+                    color="info"
+                    size="small"
                     icon={<InfoIcon />}
                   />
                 }
@@ -373,7 +385,7 @@ const Alerts = () => {
                 label="Notificaciones por Email"
               />
             </Grid>
-            
+
             {alertSettings.emailNotifications && (
               <>
                 <Grid item xs={12}>
@@ -416,7 +428,7 @@ const Alerts = () => {
                 </Grid>
               </>
             )}
-            
+
             <Grid item xs={12} md={6}>
               <TextField
                 fullWidth
